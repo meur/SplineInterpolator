@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using MathNet.Numerics.LinearAlgebra;
-using MathNet.Numerics.LinearAlgebra.Double;
 
 namespace SplineInterpolator
 {
@@ -18,17 +18,8 @@ namespace SplineInterpolator
         static double[,] matrix_N;
         static void Main(string[] args)
         {
-            /*var A = Matrix<double>.Build.DenseOfArray(new double[,] {
-                { 3, 2, -1 },
-                { 2, -2, 4 },
-                { -1, 0.5, -1 }
-            });
-            var b = Vector<double>.Build.Dense(new double[] { 1, -2, 0 });
-            var x = A.Solve(b);*/
 
             double[,] detectedPoints = readPoints("C:/CODE/geomod/export.txt");
-
-            //nurbs_n = detectedPoints.Length / 2;
 
             knotSetup(nurbs_n);
 
@@ -37,6 +28,18 @@ namespace SplineInterpolator
             var A = Matrix<double>.Build.DenseOfArray(matrix_N);
             var b = Matrix<double>.Build.DenseOfArray(detectedPoints);
             var x = A.Solve(b);
+
+            using (StreamWriter writer = new StreamWriter("C:/CODE/geomod/export2.txt"))
+            {
+                for (int i = 0; i < nurbs_n; i++)
+                {
+                    writer.Write(x[i, 0]);
+                    writer.Write(' ');
+                    writer.WriteLine(x[i, 1]);
+                }
+            }
+            Console.WriteLine(A);
+            Console.WriteLine(b);
             Console.WriteLine(x);
         }
 
@@ -49,11 +52,11 @@ namespace SplineInterpolator
             int currentLineCount = 0;
             foreach (string line in text)
             {
-                if (new Random().NextDouble() > 0.9)
+                if (new Random().NextDouble() > 0)
                 {
                     string[] parts = line.Split(' ');
-                    result[currentLineCount, 0] = Int32.Parse(parts[1]);
-                    result[currentLineCount, 1] = Int32.Parse(parts[0]);
+                    result[currentLineCount, 0] = Int32.Parse(parts[0]);
+                    result[currentLineCount, 1] = Int32.Parse(parts[1]);
                     currentLineCount++;
                 }
             }
@@ -83,32 +86,25 @@ namespace SplineInterpolator
         private static void matrixNSetup()
         {
             int n = nurbs_n;
-            int uMax = nurbs_n + nurbs_p;
             matrix_N = new double[n, n];
-            for(int i = 0; i < n; i++)
+            for(int i = 0; i < nurbs_n; i++)
             {
-                for (int j = 0; j < n; j++)
+                for (int j = 0; j < nurbs_n; j++)
                 {
-                    double u = uMax * i / (double) n;
-                    matrix_N[i, j] = nurbs_N(j, nurbs_p, u);
+                    if (i == j)
+                    {
+                        matrix_N[i, j] = (i == 0 || i == nurbs_n - 1) ? 2 : 4;
+                    }
+                    else if (i - j == 1 || j - i == 1)
+                    {
+                        matrix_N[i, j] = 1;
+                    }
+                    else
+                    {
+                        matrix_N[i, j] = 0;
+                    }
                 }
-
             }
-        }
-
-        private static double nurbs_N(int i, int p, double u)
-        {
-
-            if (p == 0)
-            {
-                if (knots[i] <= u && u < knots[i + 1])
-                    return 1;
-                else
-                    return 0;
-            }
-            double ret = (((u - knots[i]) / (knots[i + p] - knots[i])) * nurbs_N(i, p - 1, u))
-                        + (((knots[i + p + 1] - u) / (knots[i + p + 1] - knots[i + 1])) * nurbs_N(i + 1, p - 1, u));
-            return ret;
         }
     }
 }
