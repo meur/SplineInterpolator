@@ -19,7 +19,7 @@ namespace SplineInterpolator
         static void Main(string[] args)
         {
 
-            double[,] detectedPoints = readPoints("C:/CODE/geomod/export.txt");
+            double[,] detectedPoints = readPoints("D:/D_nemethy/UNIversity/DE IK-PTI Msc/2020-2021 3. felev/Geometriai modellezés/Beadando_projekt(git)/CurveDetector/export_curve5.txt"); // export_curve1.txt
 
             knotSetup(nurbs_n);
 
@@ -29,7 +29,7 @@ namespace SplineInterpolator
             var b = Matrix<double>.Build.DenseOfArray(detectedPoints);
             var x = A.Solve(b);
 
-            using (StreamWriter writer = new StreamWriter("C:/CODE/geomod/export2.txt"))
+            using (StreamWriter writer = new StreamWriter("D:/D_nemethy/UNIversity/DE IK-PTI Msc/2020-2021 3. felev/Geometriai modellezés/Beadando_projekt(git)/export2.txt"))
             {
                 for (int i = 0; i < nurbs_n; i++)
                 {
@@ -52,12 +52,17 @@ namespace SplineInterpolator
             int currentLineCount = 0;
             foreach (string line in text)
             {
-                if (new Random().NextDouble() > 0)
+                if (new Random().NextDouble() > 0.0)
                 {
                     string[] parts = line.Split(' ');
-                    result[currentLineCount, 0] = Int32.Parse(parts[0]);
-                    result[currentLineCount, 1] = Int32.Parse(parts[1]);
-                    currentLineCount++;
+                    if (currentLineCount == 0 ||
+                        distance(Int32.Parse(parts[0]), Int32.Parse(parts[1]),
+                        result[currentLineCount - 1, 0], result[currentLineCount - 1, 1]) > 20)
+                    {
+                        result[currentLineCount, 0] = Int32.Parse(parts[0]);
+                        result[currentLineCount, 1] = Int32.Parse(parts[1]);
+                        currentLineCount++; 
+                    }
                 }
             }
             nurbs_n = currentLineCount;
@@ -105,6 +110,11 @@ namespace SplineInterpolator
                     }
                 }
             }
+        }
+
+        private static double distance(double point1_x, double point1_y, double point2_x, double point2_y)
+        {
+            return Math.Sqrt(Math.Pow(point1_x - point2_x, 2) + Math.Pow(point1_y - point2_y, 2));
         }
     }
 }
